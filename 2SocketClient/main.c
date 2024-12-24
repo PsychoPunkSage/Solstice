@@ -69,13 +69,75 @@ int setup_connection(const char *ip_addr, int port)
     return sock;
 }
 
+int send_message(int sock, const char *message)
+{
+    if (send(sock, message, strlen(message), 0) < 0)
+    {
+        perror("Failed to send message");
+        return -1;
+    }
+    printf("Message sent: %s\n", message);
+    return 0;
+}
+
+int receive_response(int sock, char *buffer)
+{
+    int bytes_received = recv(sock, buffer, BUFFER_SIZE - 1, 0);
+    if (bytes_received < 0)
+    {
+        perror("Failed to receive message");
+        return -1;
+    }
+
+    buffer[bytes_received] = '\0'; // Null-terminate the received data
+    printf("Server response: %s\n", buffer);
+    return 0;
+}
+
+void communication_loop(int sock)
+{
+    char message[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE];
+
+    while (1)
+    {
+        // Prompt the user for input
+        printf("Enter message to send to server (type 'exit' to quit): ");
+        fgets(message, BUFFER_SIZE, stdin);
+
+        // Remove newline character from the input
+        message[strcspn(message, "\n")] = '\0';
+
+        // Check if the user wants to exit
+        if (strcmp(message, "exit") == 0)
+        {
+            printf("Exiting...\n");
+            break;
+        }
+
+        // Send the message to the server
+        if (send_message(sock, message) < 0)
+        {
+            break;
+        }
+
+        // Receive the server's response
+        if (receive_response(sock, buffer) < 0)
+        {
+            break;
+        }
+    }
+}
+
 int main(int argc, char *argv[])
 {
     ////////////////////
     // INITIALIZATION //
     ////////////////////
-    const char *ip_address = DEFAULT_IP;
     int port = DEFAULT_PORT;
+    const char *ip_address = DEFAULT_IP;
+    char buffer[BUFFER_SIZE];
+    char message[BUFFER_SIZE];
 
     // CmdLine interaction
     if (argc >= 2)
@@ -95,6 +157,11 @@ int main(int argc, char *argv[])
     {
         return 1;
     }
+
+    ///////////////////
+    // COMMUNICATION //
+    ///////////////////
+    communication_loop(sock);
 
     printf("Connected to server at %s:%d\n", ip_address, port);
 
