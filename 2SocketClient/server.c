@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -109,6 +110,15 @@ void handle_client(int client_sock)
         buffer[bytes_read] = '\0'; // Null-terminate the received data
         printf("Received: %s\n", buffer);
 
+        // Convert to uppercase
+        for (int i = 0; i < bytes_read; i++)
+        {
+            if (islower(buffer[i]))
+            {
+                buffer[i] = toupper(buffer[i]); // Convert to uppercase
+            }
+        }
+
         // Echo the message back to the client
         if (write(client_sock, buffer, bytes_read) < 0)
         {
@@ -149,7 +159,6 @@ void start_server(int server_sock)
         inet_ntop(AF_INET, &client_addr.sin_addr, client_ip, INET_ADDRSTRLEN);
         printf("New connection from %s:%d\n", client_ip, ntohs(client_addr.sin_port));
 
-        // Handle the client in a separate function
         handle_client(client_sock);
     }
 }
