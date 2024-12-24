@@ -14,6 +14,14 @@ int setup_connection(const char *ip_addr, int port)
 {
     int sock = 0;
     struct sockaddr_in serv_addr;
+    /*
+    struct sockaddr_in {
+        short            sin_family;    // AF_INET
+        unsigned short   sin_port;      // Port number
+        struct in_addr   sin_addr;      // IP address
+        char             sin_zero[8];   // Padding
+    };
+    */
 
     // CREATE SOCKET //
     printf("Creating socket...\n");
@@ -34,14 +42,6 @@ int setup_connection(const char *ip_addr, int port)
     //  => SETUP SERVER ADDR
     printf("Setting up server address structure...\n");
     memset(&serv_addr, 0, sizeof(serv_addr));
-    /*
-    struct sockaddr_in {
-        short            sin_family;    // AF_INET
-        unsigned short   sin_port;      // Port number
-        struct in_addr   sin_addr;      // IP address
-        char             sin_zero[8];   // Padding
-    };
-    */
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
     printf("Port set to: %d\n", port);
@@ -51,20 +51,13 @@ int setup_connection(const char *ip_addr, int port)
     int pton_result = inet_pton(AF_INET, ip_addr, &serv_addr.sin_addr);
     if (pton_result <= 0)
     {
-        if (pton_result == 0)
-        {
-            perror("Invalid IP address format\n");
-        }
-        else
-        {
-            perror("inet_pton failed with error\n");
-        }
+        perror("inet_pton failed with error\n");
         close(sock);
         return -1;
     }
     printf("IP address converted successfully\n");
 
-    // CONNECT TO SERVER
+    // CONNECT TO SERVER //
     printf("Attempting to connect to %s:%d...\n", ip_addr, port);
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
@@ -81,7 +74,6 @@ int main(int argc, char *argv[])
     ////////////////////
     // INITIALIZATION //
     ////////////////////
-
     const char *ip_address = DEFAULT_IP;
     int port = DEFAULT_PORT;
 
