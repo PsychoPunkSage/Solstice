@@ -25,8 +25,8 @@ static mut CV_WRITER: pthread_cond_t = PTHREAD_COND_INITIALIZER;
 unsafe extern "C" fn readers(_arg: *mut c_void) -> *mut c_void {
     let mut rng = rand::thread_rng();
 
-    (0..20).into_iter().for_each(|i| {
-        usleep(rng.gen_range(0..100000));
+    (0..20).into_iter().for_each(|_| {
+        usleep(rng.gen_range(0..10));
 
         pthread_mutex_lock(&mut MUTEX);
 
@@ -51,7 +51,34 @@ unsafe extern "C" fn readers(_arg: *mut c_void) -> *mut c_void {
     println!("Reader is Exiting");
     null_mut()
 }
-unsafe extern "C" fn writers(_arg: *mut c_void) /*-> *mut c_void*/ {}
+
+unsafe extern "C" fn writers(_arg: *mut c_void) -> *mut c_void {
+    let mut rng = rand::thread_rng();
+
+    (1000..1020).into_iter().for_each(|i| {
+        usleep(rng.gen_range(0..10));
+
+        pthread_mutex_lock(&mut MUTEX);
+        C_WRITERS += 1;
+
+        while C_READERS > 0 {
+            pthread_cond_wait(&mut CV_WRITER, &mut MUTEX);
+        }
+
+        SV = i;
+        println!("VAR(W): {}", SV);
+        println!("    |_> Current Readers: {}", C_READERS);
+        println!("    |_> Current Writers: {}", C_WRITERS);
+        C_WRITERS -= 1;
+
+        pthread_mutex_unlock(&mut MUTEX);
+        pthread_cond_broadcast(&mut CV_READER);
+        pthread_cond_broadcast(&mut CV_WRITER);
+    });
+
+    println!("Writer is Exiting");
+    null_mut()
+}
 
 fn main() {
     println!("Enter no. of Readers:");
