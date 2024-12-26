@@ -25,7 +25,7 @@ fn main() {
     let n_writers: i32 = input.trim().parse().unwrap();
 
     // STATE Init
-    let mut state = Arc::new((
+    let state = Arc::new((
         Mutex::new(SharedState {
             shared_val: 0,
             readers_count: 0,
@@ -35,8 +35,12 @@ fn main() {
         Condvar::new(),
     ));
 
+    // Thread Handlers
+    let mut readers = Vec::new();
+    let mut writers = Vec::new();
+
     // THREAD CREATION
-    (0..n_readers).into_iter().map(|i| {
+    (0..n_readers).into_iter().for_each(|i| {
         let c_state = Arc::clone(&state);
         let handle = thread::spawn(move || {
             reader(c_state);
@@ -44,4 +48,23 @@ fn main() {
 
         readers.push(handle);
     });
+
+    (0..n_writers).into_iter().for_each(|i| {
+        let c_state = Arc::clone(&state);
+        let handle = thread::spawn(move || {
+            writer(c_state);
+        });
+        writers.push(handle);
+    });
+
+    // JoinHandles
+    readers
+        .into_iter()
+        .for_each(|handle| handle.join().unwrap());
+
+    writers
+        .into_iter()
+        .for_each(|handle| handle.join().unwrap());
+
+    println!("Bye Bye!!!");
 }
