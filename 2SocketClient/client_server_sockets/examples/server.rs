@@ -7,7 +7,7 @@ static DEFAULT_IP: &str = "127.0.0.1";
 static DEFAULT_PORT: u16 = 8000;
 static BUFFER_SIZE: usize = 1024;
 
-fn create_server(ip_addr: &str, port: u16) -> io::Result<(TcpListener)> {
+fn create_server(ip_addr: &str, port: u16) -> io::Result<TcpListener> {
     println!("Creating Socket");
     let listener = TcpListener::bind((ip_addr, port))?;
     println!("Socket created successfully");
@@ -38,7 +38,7 @@ fn handle_client(mut stream: TcpStream) -> io::Result<()> {
     Ok(())
 }
 
-fn main() {
+fn main() -> io::Result<()> {
     let args: Vec<String> = std::env::args().collect();
 
     let ip_addr = args.get(1).map(|s| s.as_str()).unwrap_or(DEFAULT_IP);
@@ -47,5 +47,17 @@ fn main() {
         .and_then(|a| a.parse::<u16>().ok())
         .unwrap_or(DEFAULT_PORT);
 
-    let server = 
+    let listener = create_server(ip_addr, port)?;
+    println!("Server is running on <{}:{}>", ip_addr, port);
+
+    listener.incoming().into_iter().for_each(|s| match s {
+        Ok(stream) => {
+            if let Err(e) = handle_client(stream) {
+                eprintln!("Error handling client: {}", e);
+            }
+        }
+        Err(e) => eprintln!("Error accepting connection: {}", e),
+    });
+
+    Ok(())
 }
