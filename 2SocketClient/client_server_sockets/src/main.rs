@@ -4,18 +4,18 @@ use std::{
 };
 
 const DEFAULT_IP: &str = "127.0.0.1";
-const DEFAULT_PORT: u16 = 8080;
+const DEFAULT_PORT: u16 = 8000;
 const BUFFER_SIZE: usize = 1024;
 
 fn setup_connection(ip_addr: &str, port: u16) -> io::Result<TcpStream> {
     println!("Attempting to connect to {}:{}", ip_addr, port);
-    let conn = TcpStream::connect((ip_addr, port)).unwrap();
+    let conn = TcpStream::connect((ip_addr, port))?;
     println!("Connected Successfully");
     Ok(conn)
 }
 
 fn send_messages(stream: &mut TcpStream, message: &str) -> io::Result<()> {
-    stream.write_all(message.as_bytes()).unwrap();
+    stream.write_all(message.as_bytes())?;
     println!("Message Sent: {}", message);
     Ok(())
 }
@@ -51,4 +51,19 @@ fn communication_loop(mut stream: TcpStream) -> io::Result<()> {
     Ok(())
 }
 
-fn main() {}
+fn main() -> io::Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+
+    let ip_addr = args.get(1).map(|s| s.as_str()).unwrap_or(DEFAULT_IP);
+    let port = args
+        .get(2)
+        .and_then(|s| s.parse::<u16>().ok())
+        .unwrap_or(DEFAULT_PORT);
+
+    let stream = setup_connection(ip_addr, port)?;
+    println!("Connected to {}:{}", ip_addr, port);
+
+    communication_loop(stream)?;
+
+    Ok(())
+}
